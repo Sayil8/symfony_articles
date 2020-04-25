@@ -1,6 +1,7 @@
 version: 2
 jobs:
   build_and_test:
+    run: ls -lR ~/Documentos/mootube
     working_directory: ~/Documentos/mootube
     docker:
       - image: php:7.1
