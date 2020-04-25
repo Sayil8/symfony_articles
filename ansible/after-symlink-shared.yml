@@ -1,5 +1,0 @@
----
-- name: Set up infrastructure related parameters
-  template:
-    src: "{{ playbook_dir }}/templates/.env"
-    dest: "{{ ansistrano_release_path.stdout }}/env"
