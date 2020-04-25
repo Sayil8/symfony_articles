@@ -1,7 +1,9 @@
 ---
 - hosts: webserver
   vars_files:
-   # - ./vars/vault.yml
+    - ./vars/provision_vault.yml
+    - ./vars/provision_vars.yml
+    - ./vars/vault.yml
     - ./vars/vars.yml
 
   vars_prompt:
@@ -63,6 +65,14 @@
       apt:
         name: mysql-server
         state: latest
+#    - name: Create MySQL symfony user
+ #     become: true
+  #    mysql_user:
+   #     # change name to anything you want
+    #    name: root
+        # uncomment if pasword is wanted:
+        # password: <somepassword>
+        #priv: '*.*:ALL'
     - name: Add PHP 7 PPA repository
       become: true
       apt_repository:
@@ -78,6 +88,7 @@
           - php7.4-mysql
           - php7.4-xml
           - php7.4-mbstring
+          - php-apcu
         state: latest
       notify: Restart PHP-FPM
     - name: Set date.timezone for CLI
@@ -149,6 +160,42 @@
       changed_when: "composer_self_update.stdout is not search('You are already using composer version')"
       tags:
         - deploy
+    - name: Set GitHub OAuth token for Composer
+      composer:
+        command: config
+        arguments: '-g github-oauth.github.com "{{ github_oauth_token }}"'
+        working_dir: "/home/{{ ansible_user }}"
+      tags:
+        - github_oauth
+    # Node
+    - name: Register NodeJS distribution
+      shell: 'curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -'
+      changed_when: false
+    - name: Install NodeJS
+      become: true
+      apt:
+        name: nodejs
+        state: latest
+        update_cache: yes
+    # Yarn
+    - name: Add Yarn APT key
+      become: true
+      apt_key:
+        url: 'https://dl.yarnpkg.com/debian/pubkey.gpg'
+        state: present
+    - name: Add Yarn to the source lists
+      become: true
+      lineinfile:
+        path: '/etc/apt/sources.list.d/yarn.list'
+        regexp: 'deb https://dl.yarnpkg.com/debian/ stable main'
+        line: 'deb https://dl.yarnpkg.com/debian/ stable main'
+        create: yes
+    - name: Install Yarn package manager
+      become: true
+      apt:
+        name: yarn
+        state: latest
+        update_cache: yes
   #BOOTSTRAP SYMFONY
     - include: ./includes/symfony-bootstrap.yml
   handlers:

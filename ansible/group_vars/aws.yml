@@ -1,4 +1,4 @@
 ---
 ansible_user: ubuntu
 ansible_ssh_private_key_file: ~/Documentos/ssh/Ansible_AWS_tmp.pem
-host_server_name: mootube.ec2
+host_server_name: mootube.example.com
