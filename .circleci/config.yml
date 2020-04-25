@@ -58,6 +58,8 @@ jobs:
     working_directory: ~/Documentos/startv2
     docker:
       - image: ansible/ansible:ubuntu1804
+        environment:
+          ANSIBLE_HOST_KEY_CHECKING: no
     steps:
       # Installation
       - run:
@@ -74,7 +76,10 @@ jobs:
           paths:
             - '/root/.ansible/roles'
 
-      # @TODO Deploy to AWS here...
+      # Deploy
+      - run: echo $ANSIBLE_VAULT_PASS > ./ansible/.vault-pass.txt
+      - run: ansible-playbook ansible/deploy.yml -i ansible/hosts.ini -e --vault-password-file=./ansible/.vault-pass.txt
+      - run: rm ./ansible/.vault-pass.txt
 
 workflows:
   version: 2
