@@ -5,6 +5,9 @@ jobs:
     working_directory: ~/Documentos/mootube
     docker:
       - image: php:7.1
+      - image: mysql:5.7
+        environment:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
     steps:
       # Installation
       - run:
