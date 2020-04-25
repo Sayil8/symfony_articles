@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build_and_test:
-    working_directory: ~/mootube
+    working_directory: ~/Documentos/mootube
     docker:
       - image: php:7.1
       - image: mysql:5.7

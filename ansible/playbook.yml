@@ -87,6 +87,7 @@
           - php7.4-intl
           - php7.4-mysql
           - php7.4-xml
+          - php7.4-opcache
           - php7.4-mbstring
           - php-apcu
         state: latest

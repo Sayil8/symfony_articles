@@ -6,6 +6,8 @@
 - name: Install composer deps
   composer:
     command: install
+    arguments: --classmap-authoritative
+    optimize_autoloader: yes
     working_dir: "{{ ansistrano_release_path.stdout }}"
 - name: setup permissions directory for var
   file:
