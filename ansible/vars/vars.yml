@@ -1,7 +1,10 @@
 ---
+ansistrano_current_dir: current
 symfony_root_dir: /var/www/project
-symfony_web_dir: "{{ symfony_root_dir }}/public"
+#symfony_web_dir: "{{ symfony_root_dir }}/public"
+symfony_web_dir: "{{ symfony_root_dir}}/{{ ansistrano_current_dir }}/public"
 symfony_var_dir: "{{ symfony_root_dir }}/var"
 symfony_console_path: "{{ symfony_root_dir }}/bin/console"
 symfony_doctrine_path: "{{ symfony_root_dir }} php bin/console"
 symfony_secret: "{{ vault_symfony_secret }}"
+#:qserver_document_root: "{{ symfony_root_dir}}/{{ ansistrano_current_dir }}/public"
