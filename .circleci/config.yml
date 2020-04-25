@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build_and_test:
-    working_directory: ~/Documentos/startv2
+    working_directory: ~/Documentos/Symfony_articles
     docker:
       - image: php:7.1
       - image: mysql:5.7
