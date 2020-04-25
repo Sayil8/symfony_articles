@@ -1,0 +1,159 @@
+---
+- hosts: webserver
+  vars_files:
+   # - ./vars/vault.yml
+    - ./vars/vars.yml
+
+  vars_prompt:
+    - name: symfony_env
+      prompt: "Enter the enviroment for your symfony app (prod|dev|test)"
+      default: prod
+      private: no
+  environment:
+    SYMFONY_ENV: "{{ symfony_env|lower }}"
+  pre_tasks:
+    - name: Convert entered Symfony environment to lowercase
+      set_fact:
+        symfony_env: "{{ symfony_env|lower }}"
+      tags:
+        - always
+    - name: Update APT package manager repositories cache
+      become: true
+      apt:
+        update_cache: yes
+    - name: Upgrade installed packages
+      become: true
+      apt:
+        upgrade: safe
+  roles:
+    - nginx
+    - role: davidwittman.redis
+      become: true
+  tasks:
+    - debug:
+        var: ansible_env
+    - debug:
+        var: symfony_env
+    - ping: ~
+    - name: Install cowsay - it's probably important
+      become: true
+      apt:
+        name: cowsay
+    - name: Install low-level utilities
+      become: true
+      apt:
+        name:
+          - zip
+          - unzip
+    - name: Install Git VCS
+      become: true
+      apt:
+        name: git
+        state: latest
+    - name: Set MySQL root password before installing
+      become: true
+      debconf: name='mysql-server' question='mysql-server/root_password' value='' vtype='password'
+      changed_when: false
+    - name: Confirm MySQL root password before installing
+      become: true
+      debconf: name='mysql-server' question='mysql-server/root_password_again' value='' vtype='password'
+      changed_when: false
+    - name: Install MySQL DB server
+      become: true
+      apt:
+        name: mysql-server
+        state: latest
+    - name: Add PHP 7 PPA repository
+      become: true
+      apt_repository:
+        repo: 'ppa:ondrej/php'
+    - name: Install PHP packages
+      become: true
+      apt:
+        name:
+          - php7.4-cli
+          - php7.4-curl
+          - php7.4-fpm
+          - php7.4-intl
+          - php7.4-mysql
+          - php7.4-xml
+          - php7.4-mbstring
+        state: latest
+      notify: Restart PHP-FPM
+    - name: Set date.timezone for CLI
+      become: true
+      lineinfile:
+        path: /etc/php/7.4/cli/php.ini
+        regexp: "date.timezone ="
+        line: "date.timezone = UTC"
+    - name: Set date.timezone for FPM
+      become: true
+      lineinfile:
+        path: /etc/php/7.4/fpm/php.ini
+        regexp: "date.timezone ="
+        line: "date.timezone = UTC"
+      notify: Restart PHP-FPM
+    - name: Create project directory and set its permissions
+      become: true
+      file:
+        path: "{{ symfony_root_dir }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        recurse: yes
+      tags:
+        - deploy
+    - name: Checkout Git repository
+      git:
+        repo: https://github.com/Sayil8/Symfony_articles.git
+        dest: "{{ symfony_root_dir }}"
+        force: yes
+      register: repo_code
+      tags:
+        - deploy
+    - name: Register code_changed variable
+      set_fact:
+        code_changed: repo_code.changed
+      tags:
+        - deploy
+    - name: Check for Composer
+      stat:
+        path: /usr/local/bin/composer
+      register: composer_stat
+      tags:
+        - deploy
+    - name: Download Composer
+      script: scripts/install_composer.sh
+      when: not composer_stat.stat.exists
+      tags:
+        - deploy
+    - name: Move Composer globally
+      become: true
+      command: "mv composer.phar /usr/local/bin/composer"
+      when: not composer_stat.stat.exists
+      tags:
+        - deploy
+    - name: Set permissions on Composer
+      become: true
+      file:
+        path: /usr/local/bin/composer
+        mode: "a+x"
+      when: not composer_stat.stat.exists
+      tags:
+        - deploy
+    - name: Make sure composer is at its latest version
+      composer:
+        working_dir: "{{ symfony_root_dir }}"
+        command: self-update
+      register: composer_self_update
+      changed_when: "composer_self_update.stdout is not search('You are already using composer version')"
+      tags:
+        - deploy
+  #BOOTSTRAP SYMFONY
+    - include: ./includes/symfony-bootstrap.yml
+  handlers:
+    - name: Restart PHP-FPM
+      become: true
+      service:
+        name: php7.4-fpm
+        state: restarted

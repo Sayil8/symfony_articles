@@ -1,0 +1,10 @@
+---
+- hosts: aws
+  vars:
+    ansistrano_deploy_to: "/var/www/project"
+    ansistrano_deploy_via: git # Method used to deliver the code to the server. Options are copy, rsync, git, svn, s3 or download
+    # Variables used in the Git deployment strategy
+    ansistrano_git_repo: "https://github.com/Sayil8/ansistrano-test-deploy.git" # Location of the git repository
+    ansistrano_git_branch: master # What version of the repository to check out. This can be the full 40-character SHA-1 hash,
+  roles:
+    - ansistrano.deploy
